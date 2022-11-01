@@ -2,9 +2,10 @@
 
 def main():
     
-    from Gamelog import getClean
+    from Gamelog import getClean, printTextList
 
     textFile = getClean()
+    printTextList(textFile)
     
 
 
