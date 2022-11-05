@@ -4,44 +4,29 @@ import spacy
 nlp = spacy.blank("en")
 nlp2 = spacy.load("en_core_web_sm")
 positions={"p","c","1b","2b","3b","ss","lf","cf","rf","p.","c.","1b.","2b.","3b.","ss.","lf.","cf.","rf."}
+outPhrases = {"flied out", "fouled out","struck out swinging", "struck out swinging,","struck out looking", "struck out looking,","popped up", "grounded out", "caught stealing"}
+
 
 class Player():
-    def __init__(self, name, classYear):#Constructor
+    def __init__(self, name):#Constructor
         self.name = name
-        self.classYear = classYear
     def __str__(self):#toString()
         return self.name
 
-
+#classYear, PA,H,singles,doubles,triples,HR,BBpercent, Kpercent, HBP,batavg,SB,CS,IBB
 class PositionPlayer(Player):
-    def __init__(self, name, classYear, PA,H,singles,doubles,triples,HR,BBpercent, Kpercent, HBP,batavg,SB,CS,IBB):#Constructor
+    def __init__(self, name):#Constructor
         self.name = name
-        self.classYear = classYear
-        self.PA = PA
-        self.H = H
-        self.singles = singles
-        self.doubles = doubles
-        self.triples = triples
-        self.HR = HR
-        self.BBpercent = BBpercent
-        self.Kpercent = Kpercent
-        self.HBP = HBP
-        self.batavg = batavg
-        self.SB = SB
-        self.CS = CS
-        self.IBB = IBB
+    def __str__(self):#toString()
+        return self.name
+        
 
-
+#classYear, handedness,team,games,IP,xERA,kper9
 class Pitcher(Player):
-    def __init__(self, name, classYear, handedness,team,games,IP,xERA,kper9):#Constructor
+    def __init__(self, name, ):#Constructor
         self.name = name
-        self.classYear = classYear
-        self.handedness = handedness
-        self.team = team
-        self.games = games
-        self.IP = IP
-        self.xERA = xERA
-        self.kper9 = kper9
+    def __str__(self):#toString()
+        return self.name
 
 def readTextList(textList):
     Team1 = []
@@ -101,24 +86,70 @@ def findNameOBA(actionIndex: int, words, names):#finds name given an array of wo
         name = words[0]
         #print(words[1])
     return name
-        
+
+
+
+def isOut(words, outphrases):
+    for i in range(len(words)-2):
+        if ((str(words[i])+" "+str(words[i+1]))in outphrases):#checking two words
+            return True
+    for i in range(len(words)-3):
+        if((str(words[i]) + " " + str(words[i+1]) + " "+ str(words[i+2]))in outphrases):
+            return True
+    return False
+
+def printInning(outs: int):
+    if(outs < 6):
+        print("Inning #: "+ str(1))
+        return
+    else:
+        inningNum = outs/6
+        print("Inning #: " + str(inningNum))
+
+def inningOver(outs):
+    if outs == 0:
+        return True
+    else:
+        if outs%3 == 0:
+            return True
+
 def spacyRead(textList):
+    outs = 0
     for i in range(len(textList)):#running through all lines - O(n)
-        doc = nlp2(textList[i])
-        for token in doc:
-            #definitely use token.pos_ == PROPN to get names
-            if(str(token.pos_) =="PROPN" and str(token.text) not in positions):
-                token_text = token.text
-                token_pos = token.pos_
-                print(f"{token_text:<12}{token_pos:<10}")    
+        doc = nlp2(textList[i])#current line, only process one at a time
+        
+        if isOut(doc,outPhrases):
+            outs += 1 # we are now keeping track of outs
+            print(doc)
+            print(outs)
             
+            if(inningOver(outs)):
+                printInning(outs)
             
 
+        for j in range(len(doc)):
+            #definitely use doc[i].pos_ == PROPN to get names
+            if(str(doc[j].pos_) =="PROPN" and str(doc[j].text) not in positions):
+                #ISOLATED NAMES HERE -> GET THEM USING doc[i].TEXT
+                token_text = doc[j].text
+                token_pos = doc[j].pos_
+                #print(f"{token_text:<12}{token_pos:<10}")
+
+            
+
+            
+
+def addNewPlayer(Team1, Team2,token1,token2):#have to add knowing which team it is before I can add the players, keep track of the outs to do this
+    if((str(token1)+" "+str(token2) ) not in (Team1, Team2)): 
+        Team1.append(PositionPlayer(str(token1)+" "+str(token2)))#this line ain't right
         
 
 textList = getClean()#textList is just the strings of the gamelogs
+
+print("********************************************************************************\n")
 #readTextList(textList)
 printTextList(textList)
+print("\n")
 spacyRead(textList)
 
 
