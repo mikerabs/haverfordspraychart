@@ -4,8 +4,8 @@ import spacy
 nlp = spacy.blank("en")
 nlp2 = spacy.load("en_core_web_sm")
 positions={"p","c","1b","2b","3b","ss","lf","cf","rf","p.","c.","1b.","2b.","3b.","ss.","lf.","cf.","rf."}
-outPhrases = {"flied out", "fouled out","struck out swinging", "struck out swinging,","struck out looking", "struck out looking,","popped up", "grounded out", "caught stealing"}
-
+outPhrases = {"flied out", "fouled out","struck out swinging", "struck out swinging,","struck out looking", "struck out looking,","popped up", "grounded out", "caught stealing", "out at first", "out at second", "out at third"}
+exceptions = {"reached first"}
 
 class Player():
     def __init__(self, name):#Constructor
@@ -95,16 +95,20 @@ def isOut(words, outphrases):
             return True
     for i in range(len(words)-3):
         if((str(words[i]) + " " + str(words[i+1]) + " "+ str(words[i+2]))in outphrases):
+            if(len(words)-i >=3):
+                word1 = words[i+3]
+                word2 = words[i+4]
+                if((str(words[i+3])  + str(words[i+4])+" "+str(words[i+5])) == ",reached first"):
+                    return False#accounting for error that happen by the catcher, maybe even 1b but haven't had that issue yet
+
             return True
     return False
 
-def printInning(outs: int):
+def getInning(outs: int):
     if(outs < 6):
-        print("Inning #: "+ str(1))
-        return
+        return 1
     else:
-        inningNum = outs/6
-        print("Inning #: " + str(inningNum))
+        return (outs//6)+1#+1 due to 7outs//6 outs = 1 but we'd be in the second inning 
 
 def inningOver(outs):
     if outs == 0:
@@ -118,13 +122,13 @@ def spacyRead(textList):
     for i in range(len(textList)):#running through all lines - O(n)
         doc = nlp2(textList[i])#current line, only process one at a time
         
-        if isOut(doc,outPhrases):
+        if isOut(doc,outPhrases):#If a batter is out
             outs += 1 # we are now keeping track of outs
             print(doc)
-            print(outs)
+            print("Outs:\t"+ str(outs))
             
             if(inningOver(outs)):
-                printInning(outs)
+                print("\nInning #: " + str(getInning(outs)))
             
 
         for j in range(len(doc)):
